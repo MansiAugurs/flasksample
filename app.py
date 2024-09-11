@@ -70,8 +70,8 @@ def update_user():
         return jsonify({'message':"No user is updated"}), 500            
 
 #this endpoint is used to search users on specific condition
-@app.route('/newusers', methods=['GET'])
-def get_newusers():
+# @app.route('/newusers', methods=['GET'])
+# def get_newusers():
     
     try:
         cursor.execute("SELECT * from personsdemo WHERE fname LIKE '%AHAD'")
