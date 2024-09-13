@@ -37,6 +37,7 @@ def insert_db_connection(fname, lname, id):
 def get_users():
     #this query is used to display all data from table
     try:
+
         cursor.execute("SELECT * from personsdemo")
         data = cursor.fetchall()
         print(data)
@@ -55,7 +56,31 @@ def get_users():
 @app.route('/usersUpdate', methods=['PATCH'])
 def update_user():
     try:
+        #adding validations
         query_params =request.args.to_dict()
+       
+     
+        #adding validation to check if person name is blank
+        if query_params.get('person_name') == None  or len(query_params.get('person_name')) == 0:
+            return jsonify({ "message":"person_name is missing " }) , 400
+        
+        #adding validation to check if person id is blank
+        if query_params.get('person_id') == None  or len(query_params.get('person_id')) == 0:
+            return jsonify({ "message":"person_id is missing " }) , 400
+        
+        #adding validation to check we are updating user and its  personid is present or not
+        cursor.execute(f"SELECT * from personsdemo WHERE personid={query_params.get('person_id')} ")
+        data = len(cursor.fetchall())
+        print(data)
+        
+        if data==0:
+            return jsonify({"message":"user does not exist"}),400
+            
+       
+        
+
+
+
         # print( f" UPDATE  personsdemo SET fname='{query_params['person_name']}' WHERE personid={query_params['person_id']}")
         cursor.execute(
              f" UPDATE  personsdemo SET lname='{query_params['person_name']}' WHERE personid={query_params['person_id']}"
@@ -93,6 +118,26 @@ def update_user():
 def deleteusers():
     try:
         query_params =request.args.to_dict()
+       
+     
+        #adding validation to check if person name is blank
+        if query_params.get('person_name') == None  or len(query_params.get('person_name')) == 0:
+            return jsonify({ "message":"person_name is missing " }) , 400
+        
+        #adding validation to check if person id is blank or 0
+        if query_params.get('person_id') == None  or len(query_params.get('person_id')) == 0:
+            return jsonify({ "message":"person_id is missing " }) , 400
+        
+        query_params =request.args.to_dict()
+
+        query1= cursor.execute(f"SELECT * from personsdemo WHERE personid='{query_params.get('person_id')}'")
+        #to fetch the data of the requested query
+        data1= query1.fetchall()
+        
+
+        if len(data1) ==0:
+            return jsonify({"message":"user already deleted"})
+            
         sql_query = f"DELETE FROM personsdemo WHERE personid={query_params['person_id']}"
         print(sql_query)
         cursor.execute(sql_query)
@@ -109,14 +154,42 @@ def deleteusers():
 @app.route('/add_user', methods=['POST'])
 def add_user():
     try:
+        #in POST method we get data from body and not by param string
         data = request.get_json()
         fname=data.get('fname')
         lname=data.get('lname')
         personid=data.get('personid')
+
+         #adding validation to check if person fname and lname is not even sent
+        if fname == None  or lname == None:
+            return jsonify({ "message":"person first or last name is missing " }) , 400
+        
+         #adding validation to check if person fname and lname is blank value
+        if fname == ""  or lname == "" or personid== 0:
+            return jsonify({ "message":"person first or last name is invalid value" }) , 400
+
+        #query to see the fname, lname, personid we are getting by body above  is present in the table or not
+        query1= cursor.execute(f"SELECT * from personsdemo WHERE (fname='{fname}' and lname='{lname}') or personid='{personid}'")
+        print(f"SELECT * from personsdemo WHERE fname='{fname}' and lname='{lname}' and personid='{personid}'")
+       
+        #to fetch the data of the requested query
+        data1= query1.fetchall()
+
+        print(data1)
+
+       
+
+        #adding validation by checking if the length of the data receive is  greater than 0, if true then printing the desired result
+        if len(data1) >0:
+            return jsonify({ "message":"person already exist with same first and last name and personid" }) , 400
+        
+        #query to insert data into the table
         cursor.execute("INSERT into personsdemo (fname, lname, personid) VALUES (?, ?, ?)", (fname, lname, personid))
         cnxn.commit()
         return jsonify({"message": "user added successfully"})
+
     except Exception as e:
+        print(e)
         return jsonify({"message":"no user is added"})
 
     
